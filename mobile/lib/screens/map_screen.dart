@@ -1,35 +1,81 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:location/location.dart';
+import '../widgets/bottom_navigation.dart';
 
 class MapScreen extends StatefulWidget {
+  const MapScreen({Key? key}) : super(key: key);
+
   @override
-  _MapScreenState createState() => _MapScreenState();
+  State<MapScreen> createState() => _MapScreenState();
 }
 
 class _MapScreenState extends State<MapScreen> {
-  final Set<Marker> _markers = {};
+  GoogleMapController? _mapController;
+  Location _location = Location();
+  LatLng _currentPosition = const LatLng(6.9271, 79.8612); // Default to Colombo, Sri Lanka
 
-  void _updateMarkers(double lat, double lon, String name) {
+  @override
+  void initState() {
+    super.initState();
+    _getCurrentLocation();
+  }
+
+  Future<void> _getCurrentLocation() async {
+    bool _serviceEnabled;
+    PermissionStatus _permissionGranted;
+
+    // Check if location services are enabled
+    _serviceEnabled = await _location.serviceEnabled();
+    if (!_serviceEnabled) {
+      _serviceEnabled = await _location.requestService();
+      if (!_serviceEnabled) return;
+    }
+
+    // Check for location permissions
+    _permissionGranted = await _location.hasPermission();
+    if (_permissionGranted == PermissionStatus.denied) {
+      _permissionGranted = await _location.requestPermission();
+      if (_permissionGranted != PermissionStatus.granted) return;
+    }
+
+    // Fetch current location
+    final userLocation = await _location.getLocation();
     setState(() {
-      _markers.add(Marker(
-        markerId: MarkerId(name),
-        position: LatLng(lat, lon),
-        infoWindow: InfoWindow(title: name),
-      ));
+      _currentPosition = LatLng(userLocation.latitude!, userLocation.longitude!);
     });
+
+    // Move the map camera to the user's location
+    _mapController?.animateCamera(
+      CameraUpdate.newLatLngZoom(_currentPosition, 14.0),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Drivers Map')),
+      appBar: AppBar(
+        title: const Text('Map'),
+        centerTitle: true,
+      ),
       body: GoogleMap(
         initialCameraPosition: CameraPosition(
-          target: LatLng(0, 0),
-          zoom: 14,
+          target: _currentPosition,
+          zoom: 14.0,
         ),
-        markers: _markers,
+        onMapCreated: (GoogleMapController controller) {
+          _mapController = controller;
+        },
+        myLocationEnabled: true,
+        myLocationButtonEnabled: true,
       ),
+      bottomNavigationBar: const BottomNavigation(),
     );
+  }
+
+  @override
+  void dispose() {
+    _mapController?.dispose();
+    super.dispose();
   }
 }
