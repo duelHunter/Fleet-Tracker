@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 
 class BottomNavigation extends StatelessWidget {
-  const BottomNavigation({Key? key}) : super(key: key);
+  final int currentIndex;
+
+  const BottomNavigation({super.key, required this.currentIndex});
 
   @override
   Widget build(BuildContext context) {
     return BottomNavigationBar(
+      currentIndex: currentIndex, // Highlight the active tab
       items: const [
         BottomNavigationBarItem(
             icon: Icon(Icons.dashboard), label: 'Dashboard'),
@@ -15,19 +18,20 @@ class BottomNavigation extends StatelessWidget {
       ],
       type: BottomNavigationBarType.fixed,
       onTap: (index) {
+        if (index == currentIndex) return; // Avoid unnecessary navigation
         // Handle navigation
         switch (index) {
           case 0:
-            Navigator.pushNamed(context, '/dashboard');
+            Navigator.pushReplacementNamed(context, '/dashboard');
             break;
           case 1:
-            Navigator.pushNamed(context, '/map');
+            Navigator.pushReplacementNamed(context, '/map');
             break;
           case 2:
-            Navigator.pushNamed(context, '/profile');
+            Navigator.pushReplacementNamed(context, '/profile');
             break;
           case 3:
-            Navigator.pushNamed(context, '/settings');
+            Navigator.pushReplacementNamed(context, '/settings');
             break;
         }
       },

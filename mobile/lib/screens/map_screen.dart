@@ -13,7 +13,8 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   GoogleMapController? _mapController;
   Location _location = Location();
-  LatLng _currentPosition = const LatLng(6.9271, 79.8612); // Default to Colombo, Sri Lanka
+  LatLng _currentPosition =
+      const LatLng(6.9271, 79.8612); // Default to Colombo, Sri Lanka
 
   @override
   void initState() {
@@ -42,7 +43,8 @@ class _MapScreenState extends State<MapScreen> {
     // Fetch current location
     final userLocation = await _location.getLocation();
     setState(() {
-      _currentPosition = LatLng(userLocation.latitude!, userLocation.longitude!);
+      _currentPosition =
+          LatLng(userLocation.latitude!, userLocation.longitude!);
     });
 
     // Move the map camera to the user's location
@@ -69,7 +71,7 @@ class _MapScreenState extends State<MapScreen> {
         myLocationEnabled: true,
         myLocationButtonEnabled: true,
       ),
-      bottomNavigationBar: const BottomNavigation(),
+      bottomNavigationBar: const BottomNavigation(currentIndex: 1),
     );
   }
 
