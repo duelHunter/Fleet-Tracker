@@ -1,41 +1,32 @@
-import 'package:geolocator/geolocator.dart';
+import 'package:location/location.dart';
 
 class LocationService {
-  Future<Position> getCurrentPosition() async {
-    bool serviceEnabled;
-    LocationPermission permission;
+  final Location _location = Location();
 
-    // Check location services.
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+  Future<LocationData> getCurrentPosition() async {
+    // Check if location services are enabled.
+    bool serviceEnabled = await _location.serviceEnabled();
     if (!serviceEnabled) {
-      throw Exception('Location services are disabled.');
+      serviceEnabled = await _location.requestService();
+      if (!serviceEnabled) {
+        throw Exception('Location services are disabled.');
+      }
     }
 
     // Check location permission.
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
+    PermissionStatus permission = await _location.hasPermission();
+    if (permission == PermissionStatus.denied) {
+      permission = await _location.requestPermission();
+      if (permission != PermissionStatus.granted) {
         throw Exception('Location permission denied.');
       }
     }
 
-    if (permission == LocationPermission.deniedForever) {
-      throw Exception(
-          'Location permission is permanently denied. Enable it from settings.');
-    }
-
-    // Get the current position.
-    return await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high);
+    // Get the current location.
+    return await _location.getLocation();
   }
 
-  Stream<Position> trackPosition() {
-    return Geolocator.getPositionStream(
-      locationSettings: LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 10,
-      ),
-    );
+  Stream<LocationData> trackPosition() {
+    return _location.onLocationChanged;
   }
 }
