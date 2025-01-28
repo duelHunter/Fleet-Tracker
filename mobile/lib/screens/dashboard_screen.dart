@@ -14,7 +14,7 @@ class DashboardScreen extends StatelessWidget {
       ),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
-        children: [
+        children: const [
           AlertCard(
             title: 'New Policy Update',
             description: 'Please review the new driving policies.',
