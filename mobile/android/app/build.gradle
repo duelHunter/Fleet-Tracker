@@ -25,7 +25,7 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdkVersion 21
-        targetSdk = flutter.targetSdkVersion
+        targetSdkVersion 33 // or at least 31
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }

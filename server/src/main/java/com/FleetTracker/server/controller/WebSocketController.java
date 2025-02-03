@@ -31,7 +31,7 @@ public class WebSocketController {
         for (WebSocketSession session : sessions) {
             if (session.isOpen()) {
                 try {
-                    session.sendMessage(new TextMessage("Server: " + message+ " patiyoo"));
+                    session.sendMessage(new TextMessage("Server: " + message));
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

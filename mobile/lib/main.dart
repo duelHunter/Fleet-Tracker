@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
+import 'services/location_track_send_service.dart';
+import 'package:mobile/screens/login_screen.dart';
+import 'package:mobile/screens/dashboard_screen.dart';
 import 'package:mobile/screens/map_screen.dart';
 import 'package:mobile/screens/profile_screen.dart';
-import 'screens/login_screen.dart';
-import 'screens/dashboard_screen.dart';
-import 'screens/websocket_screen.dart';
+// import 'package:mobile/screens/websocket_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize the background location tracking service
+  await LocationTrackingService.initialize();
+
   runApp(const MyApp());
 }
 
@@ -19,13 +25,13 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      initialRoute: '/websocket',
+      initialRoute: '/login',
       routes: {
         '/login': (context) => const LoginScreen(),
         '/dashboard': (context) => const DashboardScreen(),
         '/map': (context) => const MapScreen(),
         '/profile': (context) => const ProfileScreen(),
-        '/websocket': (context) => const WebSocketScreen(),
+        // '/websocket': (context) => const WebSocketScreen(),
       },
     );
   }
