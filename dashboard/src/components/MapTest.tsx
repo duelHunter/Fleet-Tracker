@@ -14,14 +14,42 @@ L.Icon.Default.mergeOptions({
 });
 
 const MapTest = () => {
-  const [location, setLocation] = useState<[number, number]>([7.471292, 80.041397]); 
+  // Initialize location with a default value..
+  const [location, setLocation] = useState<[number, number]>([7.471292, 80.041397]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setLocation(([x, y]) => [x + 0.01, y + 0.01]); // Increment coordinates for demonstration
-    }, 1000);
+    // Open a WebSocket connection to your backend server.//ws://34.46.215.218:8080/ws
+    const socket = new WebSocket("ws://34.46.215.218:8080/ws");
+    
+    socket.onopen = () => {
+      console.log("Connected to WebSocket server");
+    };
 
-    return () => clearInterval(interval); // Cleanup on component unmount
+    socket.onmessage = (event) => {
+      console.log("Received message:", event);
+      try {
+        // Expecting a JSON message like: {"latitude": 7.123456, "longitude": 80.123456}
+        const data = JSON.parse(event.data);
+        if (data.latitude && data.longitude) {
+          setLocation([data.latitude, data.longitude]);
+        }
+      } catch (error) {
+        console.error("Error parsing the message:", error);
+      }
+    };
+
+    socket.onerror = (error) => {
+      console.error("WebSocket error:", error);
+    };
+
+    socket.onclose = () => {
+      console.log("WebSocket connection closed");
+    };
+
+    // Clean up the WebSocket connection on unmount.
+    return () => {
+      socket.close();
+    };
   }, []);
 
   return (
@@ -38,7 +66,8 @@ const MapTest = () => {
         />
         <Marker position={location}>
           <Popup>
-            Current Location: <br /> Latitude: {location[0].toFixed(4)}, Longitude: {location[1].toFixed(4)}
+            Current Location: <br />
+            Latitude: {location[0].toFixed(4)}, Longitude: {location[1].toFixed(4)}
           </Popup>
         </Marker>
       </MapContainer>

@@ -30,7 +30,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
 
         for (WebSocketSession s : sessions) {
             if (s.isOpen()) {
-                s.sendMessage(new TextMessage("Server: " + message.getPayload()));
+                s.sendMessage(new TextMessage(message.getPayload()));
             }
         }
     }
