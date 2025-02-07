@@ -7,7 +7,6 @@ import 'package:location/location.dart' as l;
 import 'package:permission_handler/permission_handler.dart';
 //////////////////screens
 import 'package:mobile/screens/login_screen.dart';
-import 'package:mobile/screens/dashboard_screen.dart';
 import 'package:mobile/screens/map_screen.dart';
 import 'package:mobile/screens/profile_screen.dart';
 import '../widgets/bottom_navigation.dart';
@@ -16,7 +15,7 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
   Workmanager().registerOneOffTask("continuous_location", "track_location");
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 @pragma('vm:entry-point')
@@ -123,7 +122,7 @@ class MyApp extends StatelessWidget {
 }
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -313,7 +312,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Start sending data every 10 seconds
   void startSendingData(l.LocationData locationData) {
-    var dataTimer = Timer.periodic(Duration(seconds: 10), (timer) {
+    var dataTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
       if (isConnected) {
         channel?.sink.add(jsonEncode({
           "latitude": locationData.latitude ?? 0.0,
@@ -330,8 +329,7 @@ class LocationTile extends StatelessWidget {
   final String title;
   final Widget trailing;
 
-  const LocationTile({Key? key, required this.title, required this.trailing})
-      : super(key: key);
+  const LocationTile({super.key, required this.title, required this.trailing});
 
   @override
   Widget build(BuildContext context) {
