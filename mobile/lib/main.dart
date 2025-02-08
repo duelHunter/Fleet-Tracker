@@ -1,21 +1,22 @@
-import 'package:flutter/material.dart';
-import 'package:mobile/screens/login_screen.dart';
-import 'package:mobile/screens/dashboard_screen.dart';
-import 'package:mobile/screens/map_screen.dart';
-import 'package:mobile/screens/profile_screen.dart';
-// import 'package:mobile/screens/websocket_screen.dart';
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:location/location.dart' as l;
 import 'package:permission_handler/permission_handler.dart';
+//////////////////screens
+import 'package:mobile/screens/login_screen.dart';
+import 'package:mobile/screens/dashboard_screen.dart';
+import 'package:mobile/screens/map_screen.dart';
+import 'package:mobile/screens/profile_screen.dart';
+import '../widgets/bottom_navigation.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
   Workmanager().registerOneOffTask("continuous_location", "track_location");
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 @pragma('vm:entry-point')
@@ -112,11 +113,228 @@ class MyApp extends StatelessWidget {
       initialRoute: '/login',
       routes: {
         '/login': (context) => const LoginScreen(),
-        '/dashboard': (context) => const DashboardScreen(),
+        '/dashboard': (context) => const HomeScreen(),
         '/map': (context) => const MapScreen(),
         '/profile': (context) => const ProfileScreen(),
         // '/websocket': (context) => const WebSocketScreen(),
       },
     );
+  }
+}
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({Key? key}) : super(key: key);
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  bool gpsEnabled = false;
+  bool permissionGranted = false;
+  l.Location location = l.Location();
+  late StreamSubscription subscription;
+  bool trackingEnabled = false;
+
+  List<l.LocationData> locations = [];
+  double? currentSpeed;
+
+  IOWebSocketChannel? channel;
+  bool isConnected = false;
+
+  @override
+  void initState() {
+    super.initState();
+    checkStatus();
+    connectWebSocket();
+  }
+
+  @override
+  void dispose() {
+    stopTracking();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Location and Speed Tracker'),
+        centerTitle: true,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.max,
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            LocationTile(
+              title: "GPS",
+              trailing: gpsEnabled
+                  ? const Text("Enabled")
+                  : ElevatedButton(
+                      onPressed: requestEnableGps,
+                      child: const Text("Enable GPS"),
+                    ),
+            ),
+            LocationTile(
+              title: "Permission",
+              trailing: permissionGranted
+                  ? const Text("Granted")
+                  : ElevatedButton(
+                      onPressed: requestLocationPermission,
+                      child: const Text("Request Permission"),
+                    ),
+            ),
+            LocationTile(
+              title: "Location Tracking",
+              trailing: trackingEnabled
+                  ? ElevatedButton(
+                      onPressed: stopTracking,
+                      child: const Text("Stop"),
+                    )
+                  : ElevatedButton(
+                      onPressed: gpsEnabled && permissionGranted
+                          ? startTracking
+                          : null,
+                      child: const Text("Start"),
+                    ),
+            ),
+            LocationTile(
+              title: "Current Speed",
+              trailing: currentSpeed != null
+                  ? Text("${currentSpeed!.toStringAsFixed(2)} km/h")
+                  : const Text("N/A"),
+            ),
+            Expanded(
+              child: ListView.builder(
+                itemCount: locations.length,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    title: Text(
+                      "Lat: ${locations[index].latitude}, Lon: ${locations[index].longitude}",
+                    ),
+                  );
+                },
+              ),
+            )
+          ],
+        ),
+      ),
+      bottomNavigationBar: const BottomNavigation(currentIndex: 0),
+    );
+  }
+
+  void requestEnableGps() async {
+    bool isGpsActive = await location.requestService();
+    setState(() => gpsEnabled = isGpsActive);
+  }
+
+  void requestLocationPermission() async {
+    var status = await Permission.locationAlways.request();
+    setState(() => permissionGranted = status.isGranted);
+  }
+
+  void checkStatus() async {
+    gpsEnabled = await location.serviceEnabled();
+    var status = await Permission.locationAlways.status;
+    permissionGranted = status.isGranted;
+    setState(() {});
+  }
+
+  void startTracking() async {
+    connectWebSocket();
+    subscription = location.onLocationChanged.listen((event) {
+      setState(() {
+        currentSpeed = event.speed != null ? event.speed! * 3.6 : null;
+        locations.insert(0, event);
+        // sendLocationData(event);
+        startSendingData(event);
+      });
+    });
+
+    setState(() => trackingEnabled = true);
+  }
+
+  void stopTracking() {
+    subscription.cancel();
+    setState(() {
+      trackingEnabled = false;
+      currentSpeed = null;
+    });
+    locations.clear();
+  }
+
+  Future<void> connectWebSocket() async {
+    try {
+      channel = IOWebSocketChannel.connect("ws://34.46.215.218:8080/ws");
+      isConnected = true;
+      print("✅ WebSocket connected successfully");
+
+      channel?.stream.listen(
+        (message) {
+          print("📩 Received from server: $message");
+        },
+        onError: (error) {
+          print("❌ WebSocket Error: $error");
+          isConnected = false;
+          reconnectWebSocket();
+        },
+        onDone: () {
+          print("🔌 WebSocket closed. Attempting to reconnect...");
+          isConnected = false;
+          reconnectWebSocket();
+        },
+        cancelOnError: true,
+      );
+    } catch (e) {
+      print("❌ WebSocket connection failed: $e");
+      isConnected = false;
+      reconnectWebSocket();
+    }
+  }
+
+  void reconnectWebSocket() async {
+    await Future.delayed(Duration(seconds: 5));
+    print("🔄 Reconnecting WebSocket...");
+    await connectWebSocket();
+  }
+
+  void sendLocationData(l.LocationData locationData) {
+    if (isConnected) {
+      channel?.sink.add(jsonEncode({
+        "latitude": locationData.latitude ?? 0.0,
+        "longitude": locationData.longitude ?? 0.0,
+        "speed": locationData.speed ?? 0.0,
+        "timestamp": DateTime.now().toIso8601String(),
+      }));
+    }
+  }
+
+  // Start sending data every 10 seconds
+  void startSendingData(l.LocationData locationData) {
+    var dataTimer = Timer.periodic(Duration(seconds: 10), (timer) {
+      if (isConnected) {
+        channel?.sink.add(jsonEncode({
+          "latitude": locationData.latitude ?? 0.0,
+          "longitude": locationData.longitude ?? 0.0,
+          "speed": locationData.speed ?? 0.0,
+          "timestamp": DateTime.now().toIso8601String(),
+        }));
+      }
+    });
+  }
+}
+
+class LocationTile extends StatelessWidget {
+  final String title;
+  final Widget trailing;
+
+  const LocationTile({Key? key, required this.title, required this.trailing})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(title: Text(title), trailing: trailing);
   }
 }
