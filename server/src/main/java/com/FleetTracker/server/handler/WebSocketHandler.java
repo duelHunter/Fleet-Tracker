@@ -20,6 +20,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
+        logger.info(String.valueOf("meeeeeeeeeeeeeeeeeeeeeeeeeeeee seesion is "+session));
         // Retrieve driverId from the connection URL query parameter
         String driverId = getDriverIdFromSession(session);
         if (driverId != null) {
