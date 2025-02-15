@@ -32,6 +32,8 @@ public class WebSocketHandler extends TextWebSocketHandler {
 
     // Helper method to extract driverId from the session URI
     private String getDriverIdFromSession(WebSocketSession session) {
+
+        logger.info("Ssssssssssssssssssssssss"+session.getUri().getQuery());
         if (session.getUri() != null && session.getUri().getQuery() != null) {
             String query = session.getUri().getQuery(); // e.g., "driverId=123"
             // Very simple parser for "driverId=123"

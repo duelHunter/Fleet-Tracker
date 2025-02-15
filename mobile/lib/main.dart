@@ -27,6 +27,7 @@ void callbackDispatcher() {
     return Future.value(true);
   });
 }
+
 ////
 Future<void> startLocationTracking() async {
   l.Location location = l.Location();
@@ -48,7 +49,8 @@ Future<void> startLocationTracking() async {
 
   void connectWebSocket() async {
     try {
-      channel = IOWebSocketChannel.connect("ws://34.46.215.218:8080/ws");
+      channel =
+          IOWebSocketChannel.connect("ws://34.46.215.218:8080/ws?driverId=123");
       isConnected = true;
       print("✅ WebSocket connected successfully");
 
