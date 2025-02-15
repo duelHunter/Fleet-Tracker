@@ -49,8 +49,10 @@ Future<void> startLocationTracking() async {
 
   void connectWebSocket() async {
     try {
-      channel =
-          IOWebSocketChannel.connect("ws://34.46.215.218:8080/ws?driverId=123");
+      String driverId = "driver123inusha";
+
+      channel = IOWebSocketChannel.connect(
+          "ws://34.46.215.218:8080/ws?driverId=$driverId");
       isConnected = true;
       print("✅ WebSocket connected successfully");
 
@@ -268,7 +270,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> connectWebSocket() async {
     try {
-      channel = IOWebSocketChannel.connect("ws://34.46.215.218:8080/ws");
+      String driverId = "driver123inusha";
+      channel = IOWebSocketChannel.connect(
+          "ws://34.46.215.218:8080/ws?driverId=$driverId");
+
       isConnected = true;
       print("✅ WebSocket connected successfully");
 

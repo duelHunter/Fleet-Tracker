@@ -19,8 +19,8 @@ const MapTest = () => {
 
   useEffect(() => {
     // Open a WebSocket connection to your backend server.//ws://34.46.215.218:8080/ws
-    const socket = new WebSocket("ws://34.46.215.218:8080/ws");
-    
+    const socket = new WebSocket("ws://34.46.215.218:8080/ws?driverId=$driverId123");
+
     socket.onopen = () => {
       console.log("Connected to WebSocket server");
     };
@@ -53,7 +53,7 @@ const MapTest = () => {
   }, []);
 
   return (
-    <div className="h-screen w-full">
+    <div className="h-screen w-full bg-white">
       <MapContainer
         center={location}
         zoom={8}

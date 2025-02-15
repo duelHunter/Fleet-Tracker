@@ -28,22 +28,26 @@ public class WebSocketHandler extends TextWebSocketHandler {
             logger.info("Driver " + driverId + " connected with session " + session.getId());
         } else {
             logger.warn("Connection established without a driverId. Session: " + session.getId());
+            //close the websocket connection
+            session.close(CloseStatus.BAD_DATA);
         }
     }
 
     // Helper method to extract driverId from the session URI
     private String getDriverIdFromSession(WebSocketSession session) {
-
-        logger.info("Ssssssssssssssssssssssss"+session.getUri());
         if (session.getUri() != null && session.getUri().getQuery() != null) {
-            String query = session.getUri().getQuery(); // e.g., "driverId=123"
-            // Very simple parser for "driverId=123"
-            if (query.startsWith("driverId=")) {
-                return query.substring("driverId=".length());
+            String query = session.getUri().getQuery();
+            String[] params = query.split("&"); // Support multiple params
+            for (String param : params) {
+                String[] keyValue = param.split("=");
+                if (keyValue.length == 2 && keyValue[0].equals("driverId")) {
+                    return keyValue[1]; // Return the extracted driverId
+                }
             }
         }
         return null;
     }
+
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws IOException {
