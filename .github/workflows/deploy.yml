@@ -28,5 +28,5 @@ jobs:
             docker build -t fleet-tracker . 
             docker stop fleet-tracker-container || true
             docker rm fleet-tracker-container || true
-            docker run -d -p 8080:8080 --name fleet-tracker-container fleet-tracker
+            docker run -p 8080:8080 --name fleet-tracker-container fleet-tracker
           EOF
