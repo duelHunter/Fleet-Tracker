@@ -56,7 +56,7 @@ const MapTest = () => {
     <div className="h-screen w-full">
       <MapContainer
         center={location}
-        zoom={13}
+        zoom={8}
         scrollWheelZoom={false}
         style={{ height: "100%", width: "100%" }}
       >
