@@ -3,7 +3,7 @@ name: CI/CD Pipeline front end fleet-tracker
 on:
   push:
     branches:
-      - main  # Change  your production branch
+      - main  # Change to your production branch
 
 jobs:
   deploy:
