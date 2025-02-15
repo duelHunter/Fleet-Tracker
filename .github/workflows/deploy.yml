@@ -1,4 +1,4 @@
-name: CI/CD Pipeline front end fleet-tracker
+name: CI/CD Pipeline for fleet-tracker
 
 on:
   push:
