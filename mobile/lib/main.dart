@@ -5,6 +5,7 @@ import 'package:workmanager/workmanager.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:location/location.dart' as l;
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 //////////////////screens
 import 'package:mobile/screens/login_screen.dart';
 import 'package:mobile/screens/map_screen.dart';
@@ -47,9 +48,17 @@ Future<void> startLocationTracking() async {
   IOWebSocketChannel? channel;
   bool isConnected = false;
 
-  void connectWebSocket() async {
+  Future<String?> getUsername() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('username'); // Returns null if not found
+  }
+
+  Future<void> connectWebSocket() async {
     try {
-      String driverId = "driver123inusha";
+      String? driverId = await getUsername(); // Await the username retrieval
+      driverId ??= "defaultDriver"; // Provide a fallback value if null
+
+      print("driverId is $driverId");
 
       channel = IOWebSocketChannel.connect(
           "ws://34.46.215.218:8080/ws?driverId=$driverId");
@@ -268,9 +277,17 @@ class _HomeScreenState extends State<HomeScreen> {
     locations.clear();
   }
 
+  Future<String?> getUsername() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('username'); // Returns null if not found
+  }
+
   Future<void> connectWebSocket() async {
     try {
-      String driverId = "driver123inusha";
+      String? driverId = await getUsername(); // Await the username retrieval
+      driverId ??= "defaultDriver"; // Provide a fallback value if null
+      print("driverId is $driverId");
+
       channel = IOWebSocketChannel.connect(
           "ws://34.46.215.218:8080/ws?driverId=$driverId");
 

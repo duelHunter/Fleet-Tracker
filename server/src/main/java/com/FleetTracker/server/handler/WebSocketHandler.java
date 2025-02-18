@@ -48,15 +48,21 @@ public class WebSocketHandler extends TextWebSocketHandler {
         return null;
     }
 
-
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws IOException {
         logger.info("Received message: " + message.getPayload());
-        // Example: Broadcast incoming messages to all connected clients.
-        // (You can customize this behavior as needed.)
-        for (WebSocketSession s : driverSessions.values()) {
-            if (s.isOpen()) {
-                s.sendMessage(new TextMessage(message.getPayload()));
+        String driverId = getDriverIdFromSession(session);
+
+        if(driverId != null){
+
+            //new message with driver id
+            String newMessage = "{\"driverId\": \"" + driverId + "\", \"message\": \"" + message.getPayload() + "\"}";
+            // Example: Broadcast incoming messages to all connected clients.
+            // (You can customize this behavior as needed.)
+            for (WebSocketSession s : driverSessions.values()) {
+                if (s.isOpen()) {
+                    s.sendMessage(new TextMessage(newMessage));
+                }
             }
         }
     }
