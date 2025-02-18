@@ -26,15 +26,19 @@ const MapTest = () => {
     };
 
     socket.onmessage = (event) => {
-      console.log("Received message:", event);
+      console.log("Received raw message:", event.data);
       try {
-        // Expecting a JSON message like: {"latitude": 7.123456, "longitude": 80.123456}
-        const data = JSON.parse(event.data);
-        if (data.latitude && data.longitude) {
-          setLocation([data.latitude, data.longitude]);
+        // Step 1: Parse the main message
+        const mainData = JSON.parse(event.data);
+        if (mainData.message) {
+          // Step 2: Parse the inner "message" field
+          const locationData = JSON.parse(mainData.message);
+          if (locationData.latitude !== undefined && locationData.longitude !== undefined) {
+            setLocation([locationData.latitude, locationData.longitude]);
+          }
         }
       } catch (error) {
-        console.error("Error parsing the message:", error);
+        console.error("Error parsing WebSocket message:", error);
       }
     };
 
