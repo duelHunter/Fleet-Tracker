@@ -27,14 +27,27 @@ const MapTest = () => {
 
     socket.onmessage = (event) => {
       console.log("Received raw message:", event.data);
+      
       try {
-        // Step 1: Parse the main message
+        // Step 1: Parse the main WebSocket message
         const mainData = JSON.parse(event.data);
+        
+  
         if (mainData.message) {
-          // Step 2: Parse the inner "message" field
-          const locationData = JSON.parse(mainData.message);
+          let locationData;
+  
+          // Step 2: Check if `message` is a string and parse it
+          if (typeof mainData.message === "string") {
+            locationData = JSON.parse(mainData.message); // ✅ Properly parse inner JSON string
+          } else {
+            locationData = mainData.message;
+          }
+  
+          // Step 3: Validate and update location state
           if (locationData.latitude !== undefined && locationData.longitude !== undefined) {
             setLocation([locationData.latitude, locationData.longitude]);
+          } else {
+            console.error("Invalid location data format:", locationData);
           }
         }
       } catch (error) {

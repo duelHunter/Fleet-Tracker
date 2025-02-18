@@ -56,7 +56,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
         if(driverId != null){
 
             //new message with driver id
-            String newMessage = "{\"driverId\": \"" + driverId + "\", \"message\": \"" + message.getPayload() + "\"}";
+            String newMessage = "{driverId: \"" + driverId + "\", \"message\": \"" + message.getPayload() + "\"}";
             // Example: Broadcast incoming messages to all connected clients.
             // (You can customize this behavior as needed.)
             for (WebSocketSession s : driverSessions.values()) {
