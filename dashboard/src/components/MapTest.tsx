@@ -11,54 +11,71 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png",
 });
 
+interface Driver {
+  driverId: string;
+  latitude: number;
+  longitude: number;
+}
+
 const MapTest = () => {
-  const [drivers, setDrivers] = useState<{ driverId: string; latitude: number; longitude: number }[]>([]);
-  const socketRef = useRef<WebSocket | null>(null); // WebSocket reference
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const driverTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const socketRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    // Open WebSocket connection only once
     if (!socketRef.current) {
       socketRef.current = new WebSocket("ws://34.46.215.218:8080/ws?driverId=$driverId123");
-
+//ws://34.46.215.218:8080/ws?driverId=$driverId123
       socketRef.current.onopen = () => {
         console.log("Connected to WebSocket server");
       };
 
       socketRef.current.onmessage = (event) => {
         console.log("Received raw message:", event.data);
+
         try {
           const mainData = JSON.parse(event.data);
+          if (!mainData.driverId) return;
 
-          if (mainData.message) {
-            let locationData;
-            if (typeof mainData.message === "string") {
-              locationData = JSON.parse(mainData.message); 
-            } else {
-              locationData = mainData.message;
+          let locationData = typeof mainData.message === "string" ? JSON.parse(mainData.message) : mainData.message;
+
+          if (locationData.latitude !== undefined && locationData.longitude !== undefined) {
+            setDrivers((prevDrivers) => {
+              const updatedDrivers = [...prevDrivers];
+              const existingDriverIndex = updatedDrivers.findIndex(d => d.driverId === mainData.driverId);
+
+              if (existingDriverIndex !== -1) {
+                // Update existing driver location
+                updatedDrivers[existingDriverIndex] = {
+                  driverId: mainData.driverId,
+                  latitude: locationData.latitude,
+                  longitude: locationData.longitude,
+                };
+              } else {
+                // Add new driver
+                updatedDrivers.push({
+                  driverId: mainData.driverId,
+                  latitude: locationData.latitude,
+                  longitude: locationData.longitude,
+                });
+              }
+
+              return updatedDrivers;
+            });
+
+            // Reset the timeout for this driver
+            if (driverTimeouts.current.has(mainData.driverId)) {
+              clearTimeout(driverTimeouts.current.get(mainData.driverId)!);
             }
 
-            if (locationData.latitude !== undefined && locationData.longitude !== undefined) {
-              setDrivers((prevDrivers) => {
-                const updatedDrivers = [...prevDrivers];
-                const existingDriver = updatedDrivers.find(d => d.driverId === mainData.driverId);
-
-                if (existingDriver) {
-                  // Update existing driver's location
-                  existingDriver.latitude = locationData.latitude;
-                  existingDriver.longitude = locationData.longitude;
-                } else {
-                  // Add new driver
-                  updatedDrivers.push({
-                    driverId: mainData.driverId,
-                    latitude: locationData.latitude,
-                    longitude: locationData.longitude,
-                  });
-                }
-                return updatedDrivers;
-              });
-            } else {
-              console.error("Invalid location data format:", locationData);
-            }
+            // Remove the driver if no updates come in 30 seconds
+            driverTimeouts.current.set(
+              mainData.driverId,
+              setTimeout(() => {
+                setDrivers((prevDrivers) => prevDrivers.filter(d => d.driverId !== mainData.driverId));
+                driverTimeouts.current.delete(mainData.driverId);
+              }, 8000) 
+            );
           }
         } catch (error) {
           console.error("Error parsing WebSocket message:", error);
@@ -77,8 +94,10 @@ const MapTest = () => {
     return () => {
       socketRef.current?.close();
       socketRef.current = null;
+      driverTimeouts.current.forEach((timeout) => clearTimeout(timeout));
+      driverTimeouts.current.clear();
     };
-  }, []); // 🚀 Runs only ONCE when component mounts (WebSocket persists)
+  }, []);
 
   return (
     <div className="h-screen w-full bg-white">
