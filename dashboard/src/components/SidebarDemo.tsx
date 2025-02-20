@@ -50,7 +50,7 @@ export function SidebarDemo({ children }: Readonly<{ children: React.ReactNode }
     },
   ];
 
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -79,7 +79,7 @@ export function SidebarDemo({ children }: Readonly<{ children: React.ReactNode }
         "h-auto"
       )}
     >
-      <Sidebar open={open} setOpen={setOpen}>
+      <Sidebar open={true} setOpen={setOpen}>
         <SidebarBody className="justify-between gap-10 h-screen pb-16">
           <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden pt-2 ">
             <Link href="/" legacyBehavior>

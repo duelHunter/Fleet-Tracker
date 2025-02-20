@@ -24,7 +24,7 @@ const MapTest = () => {
 
   useEffect(() => {
     if (!socketRef.current) {
-      socketRef.current = new WebSocket("ws://34.46.215.218:8080/ws?driverId=$driverId123");
+      socketRef.current = new WebSocket("ws://34.46.215.218:8080/ws?driverId=$driverId1234");
 //ws://34.46.215.218:8080/ws?driverId=$driverId123
       socketRef.current.onopen = () => {
         console.log("Connected to WebSocket server");
