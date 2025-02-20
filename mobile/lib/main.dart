@@ -311,7 +311,7 @@ class _HomeScreenState extends State<HomeScreen> {
         (message) {
           print("📩 Received from server: $message");
           Map<String, dynamic> decodedMessage = jsonDecode(message);
-          print(decodedMessage["message"]["message"]);
+          print(decodedMessage["message"]);
           setState(() {
             messageList.insert(
                 0, decodedMessage["message"]); // Add message to the list

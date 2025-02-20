@@ -58,7 +58,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
                 // Step 1: Create a valid JSON structure by wrapping the received message payload in proper JSON
                 // Escape the inner message content to ensure it's safe to be inserted as JSON string
                 String payload = message.getPayload();
-                String newMessage = String.format(payload);
+                String newMessage = String.format("{\"driverId\": \"%s\", \"message\": %s}", driverId, payload);
 
                 // Step 2: Broadcast the new message with driverId to all connected clients
                 for (WebSocketSession s : driverSessions.values()) {
@@ -75,7 +75,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
             logger.warn("DriverId not found for session: " + session.getId());
         }
     }
-
+    
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
         // Remove the session by searching for the driverId
