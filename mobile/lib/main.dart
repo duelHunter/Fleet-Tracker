@@ -154,6 +154,9 @@ class _HomeScreenState extends State<HomeScreen> {
   IOWebSocketChannel? channel;
   bool isConnected = false;
 
+  // Maintain messageList in the state
+  List<String> messageList = [];
+
   @override
   void initState() {
     super.initState();
@@ -218,14 +221,24 @@ class _HomeScreenState extends State<HomeScreen> {
                   ? Text("${currentSpeed!.toStringAsFixed(2)} km/h")
                   : const Text("N/A"),
             ),
+            // Expanded(
+            //   child: ListView.builder(
+            //     itemCount: locations.length,
+            //     itemBuilder: (context, index) {
+            //       return ListTile(
+            //         title: Text(
+            //           "Lat: ${locations[index].latitude}, Lon: ${locations[index].longitude}",
+            //         ),
+            //       );
+            //     },
+            //   ),
+            // )
             Expanded(
               child: ListView.builder(
-                itemCount: locations.length,
+                itemCount: messageList.length,
                 itemBuilder: (context, index) {
                   return ListTile(
-                    title: Text(
-                      "Lat: ${locations[index].latitude}, Lon: ${locations[index].longitude}",
-                    ),
+                    title: Text(messageList[index]), // Show received messages
                   );
                 },
               ),
@@ -297,6 +310,12 @@ class _HomeScreenState extends State<HomeScreen> {
       channel?.stream.listen(
         (message) {
           print("📩 Received from server: $message");
+          Map<String, dynamic> decodedMessage = jsonDecode(message);
+          print(decodedMessage["message"]["message"]);
+          setState(() {
+            messageList.insert(
+                0, decodedMessage["message"]); // Add message to the list
+          });
         },
         onError: (error) {
           print("❌ WebSocket Error: $error");
