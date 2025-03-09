@@ -12,16 +12,22 @@ interface DriverData {
 const Page: React.FC = () => {
   const [drivers, setDrivers] = useState<DriverData[]>([]);
   const socketRef = React.useRef<WebSocket | null>(null);
+  const reconnectTimeout = React.useRef<NodeJS.Timeout | null>(null);
+  const MAX_RECONNECT_ATTEMPTS = 5;
+  let reconnectAttempts = 0;
 
-  useEffect(() => {
-    const socket = new WebSocket("ws://34.46.215.218:8080/ws?driverId=$driverId123");
-    socketRef.current = socket;
+  const connectWebSocket = () => {
+    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) return;
 
-    socket.onopen = () => {
+    console.log("Connecting to WebSocket...");
+    socketRef.current = new WebSocket("ws://34.46.215.218:8080/ws?driverId=admin");
+
+    socketRef.current.onopen = () => {
       console.log("Connected to WebSocket server");
+      reconnectAttempts = 0; // Reset reconnect attempts on successful connection
     };
 
-    socket.onmessage = (event) => {
+    socketRef.current.onmessage = (event) => {
       try {
         const mainData = JSON.parse(event.data);
         if (!mainData.driverId || !mainData.message) return;
@@ -41,7 +47,35 @@ const Page: React.FC = () => {
       }
     };
 
-    return () => socket.close();
+    socketRef.current.onerror = (error) => {
+      console.error("WebSocket error:", error);
+    };
+
+    socketRef.current.onclose = (event) => {
+      console.warn("WebSocket closed", event.reason);
+      socketRef.current = null;
+
+      // Attempt to reconnect if it wasn't a manual closure
+      if (event.code !== 1000 && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        const delay = Math.min(5000, 1000 * 2 ** reconnectAttempts); // Exponential backoff (max 5s)
+        console.log(`Reconnecting in ${delay / 1000}s...`);
+        reconnectTimeout.current = setTimeout(connectWebSocket, delay);
+        reconnectAttempts++;
+      }
+    };
+  };
+
+  useEffect(() => {
+    connectWebSocket();
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.close(1000, "Component unmounted");
+      }
+      if (reconnectTimeout.current) {
+        clearTimeout(reconnectTimeout.current);
+      }
+    };
   }, []);
 
   const sendWarning = (driverId: string) => {

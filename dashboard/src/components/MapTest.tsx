@@ -21,16 +21,19 @@ const MapTest = () => {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const driverTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const socketRef = useRef<WebSocket | null>(null);
+  const reconnectAttempts = useRef<number>(0);  // Track reconnect attempts
 
   useEffect(() => {
-    if (!socketRef.current) {
-      socketRef.current = new WebSocket("ws://34.46.215.218:8080/ws?driverId=$driverId1234");
-//ws://34.46.215.218:8080/ws?driverId=$driverId123
-      socketRef.current.onopen = () => {
+    const connectWebSocket = () => {
+      const socket = new WebSocket("ws://34.66.190.241/ws?driverId=admin");
+      socketRef.current = socket;
+
+      socket.onopen = () => {
         console.log("Connected to WebSocket server");
+        reconnectAttempts.current = 0;  // Reset retry counter on successful connection
       };
 
-      socketRef.current.onmessage = (event) => {
+      socket.onmessage = (event) => {
         console.log("Received raw message:", event.data);
 
         try {
@@ -74,7 +77,7 @@ const MapTest = () => {
               setTimeout(() => {
                 setDrivers((prevDrivers) => prevDrivers.filter(d => d.driverId !== mainData.driverId));
                 driverTimeouts.current.delete(mainData.driverId);
-              }, 8000) 
+              }, 8000)
             );
           }
         } catch (error) {
@@ -82,14 +85,24 @@ const MapTest = () => {
         }
       };
 
-      socketRef.current.onerror = (error) => {
+      socket.onerror = (error) => {
         console.error("WebSocket error:", error);
       };
 
-      socketRef.current.onclose = () => {
+      socket.onclose = () => {
         console.log("WebSocket connection closed");
+        // Attempt to reconnect after 3 seconds
+        if (reconnectAttempts.current < 5) { // Limit to 5 retries
+          reconnectAttempts.current += 1;
+          console.log(`Reconnecting... Attempt ${reconnectAttempts.current}`);
+          setTimeout(connectWebSocket, 3000);
+        } else {
+          console.log("Maximum reconnect attempts reached.");
+        }
       };
-    }
+    };
+
+    connectWebSocket(); // Initial WebSocket connection
 
     return () => {
       socketRef.current?.close();
