@@ -6,13 +6,32 @@ import 'package:web_socket_channel/io.dart';
 import 'package:location/location.dart' as l;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+////////////handling threds
+import 'dart:isolate';
 //////////////////screens
 import 'package:mobile/screens/login_screen.dart';
 import 'package:mobile/screens/map_screen.dart';
 import 'package:mobile/screens/profile_screen.dart';
 import '../widgets/bottom_navigation.dart';
 
-void main() {
+void trackLocationBackground(SendPort sendPort) {
+  startLocationTracking();
+}
+
+void main() async{
+  // Create a receive port to receive the result from the isolate
+  final receivePort = ReceivePort();
+  
+  // Spawn the isolate
+  await Isolate.spawn(trackLocationBackground, receivePort.sendPort);
+
+  // Wait for the result from the isolate
+  receivePort.listen((message) {
+    print('The sum is: $message');
+    receivePort.close(); // Close the receive port when done
+  });
+
   WidgetsFlutterBinding.ensureInitialized();
   Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
   Workmanager().registerOneOffTask("continuous_location", "track_location");
@@ -238,7 +257,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 itemCount: messageList.length,
                 itemBuilder: (context, index) {
                   return ListTile(
-                    title: Text(messageList[index]), // Show received messages
+                    title: Text(
+                      messageList[index],
+                      style: const TextStyle(
+                          color: Colors.red), // Set text color to red
+                    ),
                   );
                 },
               ),
@@ -310,11 +333,13 @@ class _HomeScreenState extends State<HomeScreen> {
       channel?.stream.listen(
         (message) {
           print("📩 Received from server: $message");
-          Map<String, dynamic> decodedMessage = jsonDecode(message);
-          print(decodedMessage["message"]);
+          // Map<String, dynamic> decodedMessage = jsonDecode(message);
+          Map<String, dynamic> jsonObject = jsonDecode(message);
+          Map<String, dynamic> messageMap = jsonObject["message"];
+          print(messageMap["message"]);
           setState(() {
             messageList.insert(
-                0, decodedMessage["message"]); // Add message to the list
+                0, messageMap["message"]); // Add message to the list
           });
         },
         onError: (error) {

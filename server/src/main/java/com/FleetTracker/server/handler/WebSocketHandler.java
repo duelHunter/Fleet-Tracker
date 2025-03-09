@@ -75,7 +75,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
             logger.warn("DriverId not found for session: " + session.getId());
         }
     }
-    
+
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
         // Remove the session by searching for the driverId
