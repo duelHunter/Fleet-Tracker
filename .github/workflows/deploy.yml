@@ -40,7 +40,31 @@ jobs:
             docker rm fleet-tracker-container || true
             docker run -p 8080:8080 --name fleet-tracker-container fleet-tracker
 
-   
+            # Setup Nginx Configuration
+            sudo bash -c 'cat > /etc/nginx/sites-available/fleet-tracker << EOL
+            server {
+                listen 80;
+                server_name 34.66.190.241;
+
+                location / {
+                    proxy_pass http://localhost:8080/;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade \$http_upgrade;
+                    proxy_set_header Connection "Upgrade";
+                    proxy_set_header Host \$host;
+
+                    proxy_read_timeout 600s;
+                    proxy_send_timeout 600s;
+                }
+            }
+            EOL'
+
+            # Enable the Nginx configuration
+            sudo ln -sf /etc/nginx/sites-available/fleet-tracker /etc/nginx/sites-enabled/
+
+            # Test Nginx configuration and restart
+            sudo nginx -t && sudo systemctl restart nginx
+
             # Allow HTTP traffic if firewall is enabled
             sudo ufw allow 80/tcp || true
           EOF
