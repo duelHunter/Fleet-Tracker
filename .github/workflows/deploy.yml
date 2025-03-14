@@ -19,14 +19,48 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
       - name: Deploy to Server
         run: |
           ssh -T -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            # Ensure the project directory exists
+            mkdir -p Fleet-Tracker
             cd Fleet-Tracker
+
+            # Clone the repository if it doesn't exist
+            if [ ! -d ".git" ]; then
+              git clone https://github.com/duelHunter/Fleet-Tracker.git .
+            fi
             git pull origin main
+
+            # Navigate to server directory and build the Docker container
             cd server
             docker build -t fleet-tracker . 
             docker stop fleet-tracker-container || true
             docker rm fleet-tracker-container || true
-            docker run -p 8080:8080 --name fleet-tracker-container fleet-tracker
+            docker run -d -p 8080:8080 --name fleet-tracker-container fleet-tracker
+
+            # Setup Nginx Configuration
+            sudo bash -c 'cat > /etc/nginx/sites-available/fleet-tracker << EOL
+            server {
+                listen 80;
+                server_name ${{ secrets.SSH_HOST }};
+
+                location / {
+                    proxy_pass http://localhost:8080/;
+                    proxy_set_header Host \$host;
+                    proxy_set_header X-Real-IP \$remote_addr;
+                    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                }
+            }
+            EOL'
+
+            # Enable the Nginx configuration
+            sudo ln -sf /etc/nginx/sites-available/fleet-tracker /etc/nginx/sites-enabled/
+
+            # Test Nginx configuration and restart
+            sudo nginx -t && sudo systemctl restart nginx
+
+            # Allow HTTP traffic if firewall is enabled
+            sudo ufw allow 80/tcp || true
           EOF
