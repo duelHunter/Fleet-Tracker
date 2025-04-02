@@ -25,7 +25,7 @@ const MapTest = () => {
 
   useEffect(() => {
     const connectWebSocket = () => {
-      const socket = new WebSocket("ws://34.66.190.241/ws?driverId=admin");
+      const socket = new WebSocket("ws://34.66.190.241:8080/ws?driverId=admin");
       socketRef.current = socket;
 
       socket.onopen = () => {
