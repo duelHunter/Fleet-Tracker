@@ -8,11 +8,8 @@
 #include <Adafruit_SSD1306.h>
 
 // WiFi Credentials
-//const char* ssid = "Dialog 4G 270";
-//const char* password = "993770B5";
-
-const char* ssid = "V1AKDnSQsAAAAAAwLg";
-const char* password = "KANPGT010wifimi";
+const char* ssid = "Your wifi SSID";
+const char* password = "Your wifi password";
 
 // WebSocket Server Info
 const char* websocketHost = "34.66.190.241";
